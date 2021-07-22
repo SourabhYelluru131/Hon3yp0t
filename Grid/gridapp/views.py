@@ -118,7 +118,7 @@ class SubmitOneRequest(View):
                 obj.Hostname = hostname
                 obj.Status = dict['Status']
                 dom = dict['Domain Info']
-                if not obj.Domaininfo:
+                if not obj.DomainInfo:
                     with open (f'./media/{server}','w') as f:
                         Dfile = File(f)
                         Dfile.write(dom)
@@ -175,6 +175,12 @@ class SubmitAllRequest(View):
                 item.Status = dict['Status']
                 item.LastSeenAlive = datetime.now()
                 item.LastUpdated = datetime.now()
+                if not item.DomainInfo:
+                    with open (f'./media/{server}','w') as f:
+                        Dfile = File(f)
+                        Dfile.write(item)
+                        item.DomainInfo = Dfile
+                    f.close()
                 item.save(update_fields=['IP', 'MAC', 'OS',
                                          'Hostname', 'Status', 'LastUpdated'])
             else:
@@ -244,8 +250,9 @@ class SearchResponse(View):
                 items = Response.objects.filter(OS=data['OS'])
             dict = {}
             for x in items:
-                properties = {'OS': x.OS, 'Hostname': x.Hostname, 'MAC': x.MAC,
-                        'IP': x.IP, 'Status': x.Status,'LastSeenAlive': str(x.LastSeenAlive), 'Last Updated': str(x.LastUpdated)}
+                #properties = {'OS': x.OS, 'Hostname': x.Hostname, 'MAC': x.MAC,
+                        #'IP': x.IP, 'Status': x.Status,'LastSeenAlive': str(x.LastSeenAlive), 'Last Updated': str(x.LastUpdated)}
+                properties = [x.OS, x.Hostname, x.MACx.IP, x.Status,str(x.LastSeenAlive),str(x.LastUpdated)]
                 dict[x.AssetName] = properties
             #jsr = json.loads(dict)
             return render(request,'user.html',{'flag':True, 'data':dict, 'error':False})
@@ -256,8 +263,7 @@ class SearchResponse(View):
             for x in item:
                 if x.AssetName == "":
                     continue
-                properties = {'OS': x.OS, 'Hostname': x.Hostname, 'MAC': x.MAC,
-                            'IP': x.IP, 'Status': x.Status,'LastSeenAlive': str(x.LastSeenAlive), 'Last Updated': str(x.LastUpdated)}
+                properties = [x.OS, x.Hostname, x.MACx.IP, x.Status,str(x.LastSeenAlive),str(x.LastUpdated)]
                 dict[x.AssetName] = properties
             # print(type(dict))
             #jsr = json.loads(dict)
