@@ -218,7 +218,8 @@ class DeleteResponse(View):
 @method_decorator(csrf_exempt, name='dispatch')
 class SearchResponse(View):
     def get(self,request):
-        item = Response.objects.all()
+        return render(request,'user.html',{'flag':False})
+        """item = Response.objects.all()
         dict = {}
         for x in item:
             if x.AssetName == "":
@@ -229,7 +230,7 @@ class SearchResponse(View):
         # print(type(dict))
         #jsr = json.loads(dict)
         # print(type(dict))
-        return JsonResponse(dict)
+        return JsonResponse(dict)"""
 
     def post(self, request):
         try:
@@ -239,22 +240,16 @@ class SearchResponse(View):
             #print("mukund here")
             if 'asset_name' in data:
                 items = Response.objects.filter(AssetName=data['asset_name'])
-                dict = {}
-                for x in items:
-                    properties = {'OS': x.OS, 'Hostname': x.Hostname, 'MAC': x.MAC,
-                            'IP': x.IP, 'Status': x.Status,'LastSeenAlive': str(x.LastSeenAlive), 'Last Updated': str(x.LastUpdated)}
-                    dict[x.AssetName] = properties
-                #jsr = json.loads(dict)
-                return JsonResponse(dict)
             elif 'OS' in data:
                 items = Response.objects.filter(OS=data['OS'])
-                dict = {}
-                for x in items:
-                    properties = {'OS': x.OS, 'Hostname': x.Hostname, 'MAC': x.MAC,
-                            'IP': x.IP, 'Status': x.Status,'LastSeenAlive': str(x.LastSeenAlive), 'Last Updated': str(x.LastUpdated)}
-                    dict[x.AssetName] = properties
-                #jsr = json.loads(dict)
-                return JsonResponse(dict)
+            dict = {}
+            for x in items:
+                properties = {'OS': x.OS, 'Hostname': x.Hostname, 'MAC': x.MAC,
+                        'IP': x.IP, 'Status': x.Status,'LastSeenAlive': str(x.LastSeenAlive), 'Last Updated': str(x.LastUpdated)}
+                dict[x.AssetName] = properties
+            #jsr = json.loads(dict)
+            return render(request,'user.html',{'flag':True, 'data':dict, 'error':False})
+            #elif AD domain
         except:
             item = Response.objects.all()
             dict = {}
@@ -267,4 +262,4 @@ class SearchResponse(View):
             # print(type(dict))
             #jsr = json.loads(dict)
             # print(type(dict))
-            return JsonResponse(dict)
+            return render(request,'user.html',{'flag':True,'error':True})
