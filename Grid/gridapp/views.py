@@ -48,16 +48,12 @@ def run_item(password, username, server, port, no):
         d = json.loads(sout)
         d["Asset_Name"] = server
         d["Status"] = "UP"
-        # print(json.dumps(d))
-        # return d
     else:
         d = {'Asset_Name': server, 'IP': '',
              'MAC': '', 'Hostname': '', 'OS': ''}
         serr = err.decode("utf-8")
         index = serr.rfind(":")
         d['Status'] = serr[index+2:-2]
-        # print(json.dumps(errd))
-        # return errd
 
     if d['Status'] != 'UP':
         command = f'sshpass -p {password} ssh {username}@{server} -p {port} python3 < script{no}.py'
@@ -69,16 +65,12 @@ def run_item(password, username, server, port, no):
             d = json.loads(sout)
             d['Asset_Name'] = server
             d['Status'] = "UP"
-            # print(json.dumps(d))
         else:
             d = {'Asset_Name': server, 'IP': '',
                  'MAC': '', 'Hostname': '', 'OS': ''}
             serr = err.decode("utf-8")
             index = serr.rfind(":")
             d['Status'] = serr[index+2:-2]
-            # print(json.dumps(d))
-
-    # print(json.dumps(d))
     return d
 
     print('\n')
@@ -93,7 +85,6 @@ class SubmitOneRequest(View):
 
         #If front end
         #server = request.POST.get("server")
-        
         #username = data['username']
         #password = data['password']
         #port = data['port']
@@ -103,15 +94,11 @@ class SubmitOneRequest(View):
             if not obj.DomainInfo:
                 no = 1
             dict = run_item(obj.Password, obj.Username, obj.Server, obj.Port, no)
-            # TODO: check if error
-            print(dict)
             if dict['Status'] == 'UP':
-                #Assetname = dict['Asset_name'],
                 ip = dict['IP']
                 mac = dict['MAC']
                 os = dict['OS']
                 hostname = dict['Hostname']
-                #obj.AssetName = Assetname
                 obj.IP = ip
                 obj.MAC = mac
                 obj.OS = os
@@ -134,7 +121,7 @@ class SubmitOneRequest(View):
                 obj.save(update_fields=['Status', 'LastUpdated'])
         except Exception as e:
             print(e)
-            return HttpResponse("Yellubhai tu galat search karra")
+            return HttpResponse("Wrong Search!")
         
         return JsonResponse(dict)
 
@@ -157,48 +144,42 @@ class SubmitAllRequest(View):
             no = 2
             if not item.DomainInfo:
                 no = 1
-            #obj = Response.objects.get(AssetName=server,Username=username, Password=password)
-            dict = run_item(password, username, server, port, no)
-            # TODO: check if error
-            print(dict)
-            if dict['Status'] == 'UP':
-                #Assetname = dict['Asset_name'],
-                ip = dict['IP']
-                mac = dict['MAC']
-                os = dict['OS']
-                hostname = dict['Hostname']
-                #obj.AssetName = Assetname
-                item.IP = ip
-                item.MAC = mac
-                item.OS = os
-                item.Hostname = hostname
-                item.Status = dict['Status']
-                item.LastSeenAlive = datetime.now()
-                item.LastUpdated = datetime.now()
-                if not item.DomainInfo:
-                    with open (f'./media/{server}','w') as f:
-                        Dfile = File(f)
-                        Dfile.write(item)
-                        item.DomainInfo = Dfile
-                    f.close()
-                item.save(update_fields=['IP', 'MAC', 'OS',
-                                         'Hostname', 'Status', 'LastUpdated'])
-            else:
-                item.Status = dict['Status']
-                item.LastUpdated = datetime.now()
-                item.save(update_fields=['Status', 'LastUpdated'])
-            count = count+1
+            try:
+                dict = run_item(password, username, server, port, no)
+                if dict['Status'] == 'UP':
+                    ip = dict['IP']
+                    mac = dict['MAC']
+                    os = dict['OS']
+                    hostname = dict['Hostname']
+                    item.IP = ip
+                    item.MAC = mac
+                    item.OS = os
+                    item.Hostname = hostname
+                    item.Status = dict['Status']
+                    item.LastSeenAlive = datetime.now()
+                    item.LastUpdated = datetime.now()
+                    if not item.DomainInfo:
+                        with open (f'./media/{server}','w') as f:
+                            Dfile = File(f)
+                            Dfile.write(item)
+                            item.DomainInfo = Dfile
+                        f.close()
+                    item.save(update_fields=['IP', 'MAC', 'OS',
+                                             'Hostname', 'Status', 'LastUpdated'])
+                else:
+                    item.Status = dict['Status']
+                    item.LastUpdated = datetime.now()
+                    item.save(update_fields=['Status', 'LastUpdated'])
+                count = count+1
+            except Exception as e:
+                print(e)
+                return HttpResponse("Encountered an error!")
         return HttpResponse("Success")
 
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateResponse(View):
     def post(self, request):
-        #data = json.loads(request.body)
-        #server = data['server']
-        #username = data['username']
-        #password = data['password']
-        #port = data['port']
         server = request.POST.get("server")
         username = request.POST.get("username")
         password = request.POST.get("password")
@@ -207,9 +188,9 @@ class CreateResponse(View):
         try:
             Response.objects.create(
                 AssetName=server, Server=server, Username=username, Password=password, Port=port)
-            return HttpResponse({"Yelluru Pilega"})
+            return HttpResponse({"Error! Please try again!"})
         except:
-            return HttpResponse({"Muku Pilega"})
+            return HttpResponse({"Error! Please try again!"})
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -240,18 +221,13 @@ class SearchResponse(View):
 
     def post(self, request):
         try:
-            #print("Hello bocha")
             data = json.loads(request.body)
-
-            #print("mukund here")
             if 'asset_name' in data:
                 items = Response.objects.filter(AssetName=data['asset_name'])
             elif 'OS' in data:
                 items = Response.objects.filter(OS=data['OS'])
             dict = {}
             for x in items:
-                #properties = {'OS': x.OS, 'Hostname': x.Hostname, 'MAC': x.MAC,
-                        #'IP': x.IP, 'Status': x.Status,'LastSeenAlive': str(x.LastSeenAlive), 'Last Updated': str(x.LastUpdated)}
                 properties = [x.OS, x.Hostname, x.MACx.IP, x.Status,str(x.LastSeenAlive),str(x.LastUpdated)]
                 dict[x.AssetName] = properties
             #jsr = json.loads(dict)
@@ -265,7 +241,4 @@ class SearchResponse(View):
                     continue
                 properties = [x.OS, x.Hostname, x.MACx.IP, x.Status,str(x.LastSeenAlive),str(x.LastUpdated)]
                 dict[x.AssetName] = properties
-            # print(type(dict))
-            #jsr = json.loads(dict)
-            # print(type(dict))
             return render(request,'user.html',{'flag':True,'error':True})
